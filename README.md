@@ -1,6 +1,8 @@
 # Maze Escape
 
-DigDug inspired maze survival game<hr>
+Maze survival game
+
+<img width="600" alt="ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/44950a28-84ad-494e-9730-b958eb934831" />
 
 ```bash
 project/
