@@ -1,0 +1,212 @@
+
+<style>
+  #builder { padding: 1rem 0; font-family: var(--font-sans); }
+  #toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .tool-btn { padding: 6px 14px; font-size: 13px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .tool-btn.active { background: var(--color-background-secondary); border-color: var(--color-border-primary); font-weight: 500; }
+  .tool-btn:hover { background: var(--color-background-secondary); }
+  #grid-wrap { overflow: auto; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); display: inline-block; }
+  canvas { display: block; cursor: crosshair; }
+  #output-wrap { margin-top: 1rem; }
+  #output { font-family: var(--font-mono); font-size: 12px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; white-space: pre; overflow-x: auto; max-height: 260px; overflow-y: auto; color: var(--color-text-primary); }
+  #status { font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; }
+  .sep { width: 0.5px; height: 24px; background: var(--color-border-tertiary); }
+  #copy-btn { margin-left: auto; }
+</style>
+
+<div id="builder">
+  <h2 class="sr-only">Maze level builder — paint walls, floors, and an exit, then export C++ code</h2>
+  <div id="toolbar">
+    <button class="tool-btn active" id="btn-wall" onclick="setTool('wall')"><span style="display:inline-block;width:12px;height:12px;background:#28285f;border-radius:2px;"></span> Wall</button>
+    <button class="tool-btn" id="btn-floor" onclick="setTool('floor')"><span style="display:inline-block;width:12px;height:12px;background:#b4a078;border-radius:2px;"></span> Floor</button>
+    <button class="tool-btn" id="btn-exit" onclick="setTool('exit')"><span style="display:inline-block;width:12px;height:12px;background:#50c878;border-radius:2px;"></span> Exit</button>
+    <div class="sep"></div>
+    <button class="tool-btn" id="btn-player" onclick="setTool('player')"><span style="display:inline-block;width:12px;height:12px;background:#4a9edd;border-radius:2px;"></span> Player spawn</button>
+    <button class="tool-btn" id="btn-enemy" onclick="setTool('enemy')"><span style="display:inline-block;width:12px;height:12px;background:#e05050;border-radius:2px;"></span> Enemy spawn</button>
+    <div class="sep"></div>
+    <button class="tool-btn" onclick="fillAll('wall')">Fill walls</button>
+    <button class="tool-btn" onclick="fillAll('floor')">Fill floor</button>
+    <button class="tool-btn" onclick="clearSpawns()">Clear spawns</button>
+    <button class="tool-btn" id="copy-btn" onclick="copyOutput()"><i class="ti ti-copy" aria-hidden="true"></i> Copy code</button>
+  </div>
+
+  <div id="grid-wrap"><canvas id="c"></canvas></div>
+  <div id="status"></div>
+
+  <div id="output-wrap">
+    <div id="output"></div>
+  </div>
+</div>
+
+<script>
+const COLS = 21, ROWS = 21, TS = 22;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width = COLS * TS;
+canvas.height = ROWS * TS;
+
+const WALL=0, FLOOR=1, EXIT=2;
+const COLORS = { 0:'#28285f', 1:'#b4a078', 2:'#50c878' };
+const SPAWN_COLORS = { player:'#4a9edd', enemy:'#e05050' };
+
+let grid = Array.from({length:ROWS}, () => new Array(COLS).fill(WALL));
+let playerSpawn = null;
+let enemySpawns = [];
+let currentTool = 'wall';
+let painting = false;
+
+function setTool(t) {
+  currentTool = t;
+  ['wall','floor','exit','player','enemy'].forEach(n => {
+    document.getElementById('btn-'+n)?.classList.toggle('active', n===t);
+  });
+}
+
+function fillAll(type) {
+  const v = type==='wall'?WALL:FLOOR;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) grid[r][c]=v;
+  render(); generateOutput();
+}
+
+function clearSpawns() { playerSpawn=null; enemySpawns=[]; render(); generateOutput(); }
+
+function cellAt(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    col: Math.floor((e.clientX - rect.left) * scaleX / TS),
+    row: Math.floor((e.clientY - rect.top) * scaleY / TS)
+  };
+}
+
+function paint(col, row) {
+  if(col<0||col>=COLS||row<0||row>=ROWS) return;
+  if(currentTool==='player') {
+    playerSpawn = {col,row};
+    if(grid[row][col]===WALL) grid[row][col]=FLOOR;
+  } else if(currentTool==='enemy') {
+    if(!enemySpawns.find(s=>s.col===col&&s.row===row))
+      enemySpawns.push({col,row});
+    if(grid[row][col]===WALL) grid[row][col]=FLOOR;
+  } else {
+    const t = currentTool==='wall'?WALL:currentTool==='floor'?FLOOR:EXIT;
+    grid[row][col]=t;
+    if(t!==FLOOR) {
+      if(playerSpawn?.col===col&&playerSpawn?.row===row) playerSpawn=null;
+      enemySpawns=enemySpawns.filter(s=>!(s.col===col&&s.row===row));
+    }
+  }
+  render(); generateOutput();
+}
+
+canvas.addEventListener('mousedown', e=>{ painting=true; const p=cellAt(e); paint(p.col,p.row); });
+canvas.addEventListener('mousemove', e=>{ if(!painting) return; const p=cellAt(e); paint(p.col,p.row); });
+canvas.addEventListener('mouseup', ()=>painting=false);
+canvas.addEventListener('mouseleave', ()=>painting=false);
+
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); painting=true; const t=e.touches[0]; const p=cellAt(t); paint(p.col,p.row); },{passive:false});
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!painting)return; const t=e.touches[0]; const p=cellAt(t); paint(p.col,p.row); },{passive:false});
+canvas.addEventListener('touchend', ()=>painting=false);
+
+function render() {
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
+    ctx.fillStyle = COLORS[grid[r][c]];
+    ctx.fillRect(c*TS, r*TS, TS, TS);
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.strokeRect(c*TS+0.5, r*TS+0.5, TS-1, TS-1);
+  }
+  if(playerSpawn) {
+    ctx.fillStyle = SPAWN_COLORS.player;
+    ctx.beginPath();
+    ctx.arc(playerSpawn.col*TS+TS/2, playerSpawn.row*TS+TS/2, TS/2-3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  enemySpawns.forEach(s=>{
+    ctx.fillStyle = SPAWN_COLORS.enemy;
+    ctx.beginPath();
+    ctx.arc(s.col*TS+TS/2, s.row*TS+TS/2, TS/2-3, 0, Math.PI*2);
+    ctx.fill();
+  });
+  updateStatus();
+}
+
+function updateStatus() {
+  const walls = grid.flat().filter(v=>v===WALL).length;
+  const floors = grid.flat().filter(v=>v===FLOOR).length;
+  const exits = grid.flat().filter(v=>v===EXIT).length;
+  document.getElementById('status').textContent =
+    `${walls} walls · ${floors} floors · ${exits} exit${exits!==1?'s':''}`+
+    (playerSpawn?` · player @ (${playerSpawn.col},${playerSpawn.row})`:'  · no player spawn')+
+    (enemySpawns.length?` · ${enemySpawns.length} enemy spawn${enemySpawns.length>1?'s':''}`:'');
+}
+
+function generateOutput() {
+  let lines = [];
+  lines.push('void Maze::buildGrid() {');
+  lines.push('    for (int row = 0; row < ROWS; ++row)');
+  lines.push('        for (int col = 0; col < COLS; ++col)');
+  lines.push('            m_grid[row][col] = TileType::Wall;');
+  lines.push('');
+
+  const floorCells = [];
+  const exitCells = [];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
+    if(grid[r][c]===FLOOR) floorCells.push({col:c,row:r});
+    if(grid[r][c]===EXIT) exitCells.push({col:c,row:r});
+  }
+
+  if(floorCells.length > 0) {
+    lines.push('    // floor tiles');
+    const floorSet = new Set(floorCells.map(({col,row})=>`${col},${row}`));
+    const wallSet = new Set();
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]===WALL) wallSet.add(`${c},${r}`);
+
+    if(floorCells.length < wallSet.size) {
+      for(const {col,row} of floorCells)
+        lines.push(`    m_grid[${row}][${col}] = TileType::Floor;`);
+    } else {
+      lines.push('    for (int row = 0; row < ROWS; ++row)');
+      lines.push('        for (int col = 0; col < COLS; ++col)');
+      lines.push('            m_grid[row][col] = TileType::Floor;');
+      lines.push('');
+      lines.push('    // wall tiles');
+      for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+        if(grid[r][c]===WALL) lines.push(`    m_grid[${r}][${c}] = TileType::Wall;`);
+    }
+    lines.push('');
+  }
+
+  if(exitCells.length > 0) {
+    lines.push('    // exit tile(s)');
+    for(const {col,row} of exitCells)
+      lines.push(`    m_grid[${row}][${col}] = TileType::Exit;`);
+    lines.push('');
+  }
+
+  if(playerSpawn) {
+    lines.push(`    m_playerSpawn = {${playerSpawn.col}, ${playerSpawn.row}};`);
+  }
+
+  if(enemySpawns.length > 0) {
+    lines.push(`    m_enemySpawns = {`);
+    lines.push(enemySpawns.map(s=>`        {${s.col}, ${s.row}}`).join(',\n'));
+    lines.push('    };');
+  }
+
+  lines.push('}');
+  document.getElementById('output').textContent = lines.join('\n');
+}
+
+function copyOutput() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Copied';
+    setTimeout(()=>btn.innerHTML=orig, 1500);
+  });
+}
+
+fillAll('wall');
+</script>
