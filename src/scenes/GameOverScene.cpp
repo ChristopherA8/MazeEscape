@@ -7,24 +7,19 @@
 
 #include "GameOverScene.hpp"
 #include "core/SceneManager.hpp"
+#include "core/AssetManager.hpp"
 #include <stdexcept>
 #include <utility>
 #include "GameScene.hpp"
 
-static sf::Font loadFont(const std::string& path) {
-   sf::Font font;
-   if (!font.openFromFile(path))
-      throw std::runtime_error("Failed to load font: " + path);
-   return font;
-}
-
 GameOverScene::GameOverScene(SceneManager* sceneManager, AssetManager& assets, int winCondition)
    : Scene(sceneManager, assets)
-   , m_font(loadFont("assets/fonts/BlockBlueprint.ttf"))
-   , m_title(m_font, winCondition ? "You Won!" : "You Lost :(", 48)
-   , m_playOption(m_font, "Play Again", 32)
-   , m_quitOption(m_font, "Quit", 32) {
-
+   , m_title(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), winCondition ? "You Won!" : "You Lost :(", 48)
+   , m_playOption(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), "Play Again", 32)
+   , m_quitOption(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), "Quit", 32)
+   , m_uiSound(m_assets.getSoundBuffer("assets/sounds/ui_sound.mp3"))
+   , m_defeatSound(m_assets.getSoundBuffer("assets/sounds/hit_sound.mp3"))
+   , m_victorySound(m_assets.getSoundBuffer("assets/sounds/zelda_victory.mp3")) {
    m_title.setFillColor(sf::Color::White);
    m_title.setPosition({winCondition ? 305.f : 280.f, 150.f});
 
@@ -33,15 +28,24 @@ GameOverScene::GameOverScene(SceneManager* sceneManager, AssetManager& assets, i
 
    m_quitOption.setFillColor(sf::Color::White);
    m_quitOption.setPosition({370.f, 360.f});
+
+   if (winCondition)
+      m_victorySound.play();
+   else
+      m_defeatSound.play();
 }
 
 void GameOverScene::handleEvent(const sf::Event& event) {
    if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
-      if (keyPressed->code == sf::Keyboard::Key::Up)
+      if (keyPressed->code == sf::Keyboard::Key::Up) {
          m_selectedIndex = (m_selectedIndex - 1 + 2) % 2;
+         m_uiSound.play();
+      }
 
-      if (keyPressed->code == sf::Keyboard::Key::Down)
+      if (keyPressed->code == sf::Keyboard::Key::Down) {
          m_selectedIndex = (m_selectedIndex + 1) % 2;
+         m_uiSound.play();
+      }
 
       if (keyPressed->code == sf::Keyboard::Key::Enter) {
          if (m_selectedIndex == 0)

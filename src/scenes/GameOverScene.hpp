@@ -8,6 +8,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Scene.hpp"
 
 class GameOverScene : public Scene {
@@ -20,10 +21,13 @@ public:
 
 private:
    // UI elements
-   sf::Font m_font;
    sf::Text m_title;
    sf::Text m_playOption;
    sf::Text m_quitOption;
+
+   sf::Sound m_uiSound;
+   sf::Sound m_defeatSound;
+   sf::Sound m_victorySound;
 
    int m_selectedIndex = 0; // which menu item is highlighted
 };

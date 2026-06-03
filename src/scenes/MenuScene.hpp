@@ -8,6 +8,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Scene.hpp"
 
 class MenuScene : public Scene {
@@ -20,10 +21,14 @@ public:
 
 private:
    // UI elements
-   sf::Font m_font;
    sf::Text m_title;
    sf::Text m_playOption;
    sf::Text m_quitOption;
+
+   sf::RectangleShape m_overlay;
+   sf::Sprite m_background;
+
+   sf::Sound m_uiSound;
 
    int m_selectedIndex = 0; // which menu item is highlighted
 };

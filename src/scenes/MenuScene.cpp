@@ -10,20 +10,16 @@
 #include <stdexcept>
 #include <utility>
 #include "GameScene.hpp"
-
-static sf::Font loadFont(const std::string& path) {
-   sf::Font font;
-   if (!font.openFromFile(path))
-      throw std::runtime_error("Failed to load font: " + path);
-   return font;
-}
+#include "core/AssetManager.hpp"
 
 MenuScene::MenuScene(SceneManager* sceneManager, AssetManager& assets)
    : Scene(sceneManager, assets)
-   , m_font(loadFont("assets/fonts/BlockBlueprint.ttf"))
-   , m_title(m_font, "Maze Escape", 48)
-   , m_playOption(m_font, "Play", 32)
-   , m_quitOption(m_font, "Quit", 32) {
+   , m_title(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), "Maze Escape", 48)
+   , m_playOption(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), "Play", 32)
+   , m_quitOption(m_assets.getFont("assets/fonts/BlockBlueprint.ttf"), "Quit", 32)
+   , m_uiSound(m_assets.getSoundBuffer("assets/sounds/ui_sound.mp3"))
+   , m_background(m_assets.getTexture("assets/textures/menu_bg.jpeg"))
+   , m_overlay({800.f, 672.f}) {
 
    m_title.setFillColor(sf::Color::White);
    m_title.setPosition({275.f, 150.f});
@@ -33,15 +29,33 @@ MenuScene::MenuScene(SceneManager* sceneManager, AssetManager& assets)
 
    m_quitOption.setFillColor(sf::Color::White);
    m_quitOption.setPosition({370.f, 360.f});
+
+   // loop menu music
+   m_assets.playMusic("assets/music/deku_trees_theme.mp3", true);
+   m_assets.setMusicVolume(10);
+
+   sf::Vector2u texSize = m_background.getTexture().getSize();
+   m_background.setScale({
+      800.f / static_cast<float>(texSize.x),
+      672.f / static_cast<float>(texSize.y)
+   });
+
+   // Add a dark overlay over the background for contrast
+   m_overlay.setFillColor(sf::Color(0, 0, 0, 180));
+   m_overlay.setPosition({0, 0});
 }
 
 void MenuScene::handleEvent(const sf::Event& event) {
    if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
-      if (keyPressed->code == sf::Keyboard::Key::Up)
+      if (keyPressed->code == sf::Keyboard::Key::Up) {
          m_selectedIndex = (m_selectedIndex - 1 + 2) % 2;
+         m_uiSound.play();
+      }
 
-      if (keyPressed->code == sf::Keyboard::Key::Down)
+      if (keyPressed->code == sf::Keyboard::Key::Down) {
          m_selectedIndex = (m_selectedIndex + 1) % 2;
+         m_uiSound.play();
+      }
 
       if (keyPressed->code == sf::Keyboard::Key::Enter) {
          if (m_selectedIndex == 0)
@@ -59,6 +73,8 @@ void MenuScene::update(float dt) {
 }
 
 void MenuScene::render(sf::RenderWindow& window) {
+   window.draw(m_background);
+   window.draw(m_overlay);
    window.draw(m_title);
    window.draw(m_playOption);
    window.draw(m_quitOption);

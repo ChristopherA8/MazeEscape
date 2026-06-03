@@ -14,6 +14,7 @@
 #include "MenuScene.hpp"
 // #include "PauseScene.hpp"   ← uncomment when ready
 #include "GameOverScene.hpp"
+#include "core/AssetManager.hpp"
 
 GameScene::GameScene(SceneManager* sceneManager, AssetManager& assets)
    : Scene(sceneManager, assets) {
@@ -24,6 +25,9 @@ GameScene::GameScene(SceneManager* sceneManager, AssetManager& assets)
 
    // spawn a few enemies at fixed positions for now
    m_enemies.emplace_back(std::make_unique<Enemy>(m_maze.get(), m_player.get()));
+
+   // loop game music
+   m_assets.playMusic("assets/music/hyrule_castle_courtyard.mp3", true);
 }
 
 void GameScene::handleEvent(const sf::Event& event) {
@@ -62,6 +66,7 @@ void GameScene::onResume() {
 void GameScene::checkWinCondition() {
    // player reaches the exit tile
    if (m_maze->isExitTile(m_player->getGridPosition())) {
+      m_assets.stopMusic();
       m_ctx->replace(std::make_unique<GameOverScene>(m_ctx, m_assets, true));
    }
 }
@@ -69,6 +74,7 @@ void GameScene::checkWinCondition() {
 void GameScene::checkLoseCondition() {
    for (auto& enemy : m_enemies) {
       if (enemy->getGridPosition() == m_player->getGridPosition()) {
+         m_assets.stopMusic();
          m_ctx->replace(std::make_unique<GameOverScene>(m_ctx, m_assets, false));
          return;
       }
