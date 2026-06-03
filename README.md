@@ -1,6 +1,6 @@
 # Maze Escape
 
-Maze survival game
+99% vibecoded Maze survival game
 
 https://github.com/user-attachments/assets/1fe19f9b-d068-4622-b423-12ee94acae71
 
