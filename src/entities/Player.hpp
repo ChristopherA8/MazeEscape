@@ -11,7 +11,7 @@
 
 class Player : public Entity {
 public:
-    Player(Maze* maze);
+    Player(Maze* maze, AssetManager& assets);
 
     void handleEvent(const sf::Event& event) override;
     void update(float dt)                    override;

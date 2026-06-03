@@ -12,10 +12,10 @@
 
 static constexpr float MOVE_INTERVAL = 0.35f;  // seconds between steps
 
-Enemy::Enemy(Maze* maze, Player* player)
-   : Entity(maze, {Maze::COLS - 2, Maze::ROWS - 2})  // spawn at opposite corner from player
+Enemy::Enemy(Maze* maze, AssetManager& assets, Player* player)
+   : Entity(maze, assets, "assets/textures/enemy.png", {Maze::COLS - 2, Maze::ROWS - 2})
    , m_target(player) {
-   m_sprite.setFillColor(sf::Color(220, 80, 80));  // red-ish
+
 }
 
 void Enemy::update(float dt) {

@@ -8,9 +8,9 @@
 #include "Player.hpp"
 #include "world/Maze.hpp"
 
-Player::Player(Maze* maze)
-   : Entity(maze, {1, 1}) {  // spawn at grid position (1,1) — first open tile
-   m_sprite.setFillColor(sf::Color(100, 180, 255));  // blueish
+Player::Player(Maze* maze, AssetManager& assets)
+   : Entity(maze, assets, "assets/textures/player.png", {1, 1}) {
+
 }
 
 void Player::handleEvent(const sf::Event& event) {

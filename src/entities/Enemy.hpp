@@ -13,7 +13,7 @@ class Player;
 
 class Enemy : public Entity {
 public:
-    Enemy(Maze* maze, Player* player);
+    Enemy(Maze* maze, AssetManager& assets, Player* player);
 
     void update(float dt)                 override;
     void render(sf::RenderWindow& window) override;

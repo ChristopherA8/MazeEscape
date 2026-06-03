@@ -20,11 +20,11 @@ GameScene::GameScene(SceneManager* sceneManager, AssetManager& assets)
    : Scene(sceneManager, assets) {
    // build the maze first — enemies and player need it to know
    // where they can spawn and move
-   m_maze   = std::make_unique<Maze>();
-   m_player = std::make_unique<Player>(m_maze.get());
+   m_maze = std::make_unique<Maze>(m_assets);
+   m_player = std::make_unique<Player>(m_maze.get(), m_assets);
 
    // spawn a few enemies at fixed positions for now
-   m_enemies.emplace_back(std::make_unique<Enemy>(m_maze.get(), m_player.get()));
+   m_enemies.emplace_back(std::make_unique<Enemy>(m_maze.get(), m_assets, m_player.get()));
 
    // loop game music
    m_assets.playMusic("assets/music/hyrule_castle_courtyard.mp3", true);

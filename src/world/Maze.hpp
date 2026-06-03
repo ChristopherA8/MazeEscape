@@ -12,6 +12,7 @@
 
 #include <SFML/Graphics.hpp>
 #include "Tile.hpp"
+#include "core/AssetManager.hpp"
 
 class Graph;
 
@@ -21,7 +22,8 @@ public:
    static constexpr int ROWS = 21;
    static constexpr int TILE_SIZE = 32;
 
-   Maze();
+   Maze(AssetManager& assets);
+   ~Maze();
 
    // grid queries — used by Player, Enemy, collision
    TileType        getTile(int col, int row)          const;
@@ -34,8 +36,6 @@ public:
    const Graph&    getGraph() const;
    
    void render(sf::RenderWindow& window);
-
-   ~Maze();
    
 private:
    void buildGrid();   // fills m_grid with wall/floor/exit
@@ -45,5 +45,7 @@ private:
    std::unique_ptr<Graph>                       m_graph;
 
    // visual tiles
-   sf::RectangleShape m_tileShape;  // reused for rendering, avoid alloc per tile
+   sf::Sprite m_wallSprite;
+   sf::Sprite m_floorSprite;
+   sf::Sprite m_exitSprite;
 };

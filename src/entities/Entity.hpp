@@ -8,12 +8,13 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include "core/AssetManager.hpp"
 
 class Maze;
 
 class Entity {
 public:
-   Entity(Maze* maze, sf::Vector2i startGridPos);
+   Entity(Maze* maze, AssetManager& assets, const std::string& texturePath, sf::Vector2i startGridPos);
    virtual ~Entity() = default;
 
    virtual void handleEvent(const sf::Event& event) {}
@@ -26,5 +27,5 @@ public:
 protected:
    Maze*              m_maze;
    sf::Vector2i       m_gridPos;    // logical position in grid space
-   sf::RectangleShape m_sprite;     // simple colored rect until you have textures
+   sf::Sprite         m_sprite;     // simple colored rect until you have textures
 };
